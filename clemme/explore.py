@@ -41,6 +41,7 @@ try:
     peopleids=[]
 
     count=1
+    maxcount=10000
     for obj in list(db['message'].find()):
         try:
             print("'{}' is id {}".format(obj['subject'], obj['_id']))
@@ -51,9 +52,9 @@ try:
         except KeyError:
             pass
         count +=1
-        if count>1000:
+        if count>maxcount:
             break
-    with open("messagedata.p", 'wb') as outfile:
+    with open("messagedata_{}.p".format(maxcount), 'wb') as outfile:
         pickle.dump([messageids, messrels, peopleids], outfile)
 
 #    count=1
