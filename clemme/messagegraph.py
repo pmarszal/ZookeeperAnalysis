@@ -121,6 +121,15 @@ def draw_peoplegraph(nodecolor='contacts', nodelabel='none', edgecolor='black'):
     elif nodecolor=='jira':
         colorlist = list(map(lambda n: (1,0,0,1) if Idd[n]['email']=='jira@apache.org' else (0,0,1,1), G.nodes()))
         nx.draw_networkx_nodes(G,pos, nodelist=G.nodes(), node_color=colorlist, node_size=200)
+    elif nodecolor=='fromboring': 
+        T=nx.DiGraph()
+        T.add_weighted_edges_from([(u,v,d['weight']) for (u,v,d) in G.edges(data=True) if u=='boring'])
+        cm = plt.get_cmap('bwr') 
+        weightdeg=list(map(lambda n: T.in_degree(n, weight='weight') if n in T.nodes() else 0, [n for n in G.nodes() if n !='boring']))
+        thresh=max(weightdeg)
+        cNorm  = colors.Normalize(vmin=0-thresh, vmax=thresh)
+        scalarMap = cmx.ScalarMappable(norm=cNorm, cmap=cm)
+        nx.draw_networkx_nodes(G,pos, nodelist=[n for n in G.nodes() if n !='boring'], node_color=scalarMap.to_rgba(weightdeg), node_size=200) 
     nx.draw_networkx_nodes(G,pos, nodelist=["boring"], node_color=(0,0,0,1), node_size=1000)
    #draw edges
     if edgecolor=='black':
@@ -133,7 +142,16 @@ def draw_peoplegraph(nodecolor='contacts', nodelabel='none', edgecolor='black'):
 #        nx.draw_networkx_edges(G, pos, edgelist=drawedges, edge_color=scalarMap.to_rgba(drawweights))
         nx.draw_networkx_edges(G, pos, edgelist=drawedges)
     if edgecolor=='boring':
-        drawedges = [(u,v, d) for (u,v,d) in G.edges(data=True) if 'boring' in [u,d]] 
+        drawedges = [(u,v, d) for (u,v,d) in G.edges(data=True) if 'boring' in [u,v]] 
+        nx.draw_networkx_edges(G, pos, edgelist=drawedges)
+    if edgecolor=='fromboring':
+        drawedges = [(u,v, d) for (u,v,d) in G.edges(data=True) if 'boring'==u] 
+        nx.draw_networkx_edges(G, pos, edgelist=drawedges)
+    if edgecolor=='toboring':
+        drawedges = [(u,v, d) for (u,v,d) in G.edges(data=True) if 'boring'==v] 
+        nx.draw_networkx_edges(G, pos, edgelist=drawedges)
+    if edgecolor=='notboring':
+        drawedges = [(u,v, d) for (u,v,d) in G.edges(data=True) if 'boring' not in [u,v]] 
         nx.draw_networkx_edges(G, pos, edgelist=drawedges)
    #draw labels
     if nodelabel=='name':
@@ -141,6 +159,11 @@ def draw_peoplegraph(nodecolor='contacts', nodelabel='none', edgecolor='black'):
         nx.draw_networkx_labels(G,pos,labels,font_size=5)
     elif nodelabel=='degree':
         labels={node:G.in_degree(node, weight='weight')-G.out_degree(node, weight='weight') for node in G.nodes() if node != 'boring'}
+        nx.draw_networkx_labels(G,pos,labels,font_size=8)
+    elif nodelabel=='fromboring':
+        T=nx.DiGraph()
+        T.add_weighted_edges_from([(u,v,d['weight']) for (u,v,d) in G.edges(data=True) if u=='boring'])
+        labels={node:T.in_degree(node, weight='weight') for node in T.nodes() if node != 'boring'}
         nx.draw_networkx_labels(G,pos,labels,font_size=8)
     elif nodelabel=='volume':
         labels={node:G.in_degree(node, weight='weight')+G.out_degree(node, weight='weight') for node in G.nodes() if node != 'boring'}
@@ -161,7 +184,7 @@ def draw_peoplegraph(nodecolor='contacts', nodelabel='none', edgecolor='black'):
   ##drawing
     plt.ylim([-0.1,1.1])
     plt.xlim([-0.1,1.1])
-    plt.savefig("pplgraph_ncolor={}_lbl={}_edge={}.png".format(nodecolor, nodelabel, edgecolor))
+    plt.savefig("pplgraphs/pplgraph_ncolor={}_lbl={}_edge={}.png".format(nodecolor, nodelabel, edgecolor))
 
 def inspect_graphdata():
     with open("pplgraphdata.p", "rb") as f:
@@ -181,7 +204,11 @@ print("==== treating {} messages ====".format(len(messageids)))
 #messagegraph(messageids, messrels, peopleids)
 #peoplegraph_to_data(messageids, messrels, peopleids)
 #peoplegraph_from_data()
+draw_peoplegraph(nodecolor='fromboring', nodelabel='fromboring', edgecolor='fromboring')
+draw_peoplegraph(nodecolor='jira', nodelabel='none', edgecolor='notboring')
 draw_peoplegraph(nodecolor='jira', nodelabel='none', edgecolor='boring')
+draw_peoplegraph(nodecolor='jira', nodelabel='none', edgecolor='fromboring')
+draw_peoplegraph(nodecolor='jira', nodelabel='none', edgecolor='toboring')
 for e in ['black', 'none']:
     draw_peoplegraph(nodecolor='outvolume', nodelabel='outvolume', edgecolor=e)
     draw_peoplegraph(nodecolor='volume', nodelabel='volume', edgecolor=e)
