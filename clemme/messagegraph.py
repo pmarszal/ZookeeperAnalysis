@@ -85,7 +85,7 @@ def peoplegraph_from_data(completelyconnected=False):
 
 def draw_peoplegraph(nodecolor='contacts', nodelabel='none', edgecolor='black'):
     plt.close()
-    print("drawing nodecolor={}, label={}".format(nodecolor, nodelabel))
+    print("drawing node={}, label={}, edge={}".format(nodecolor, nodelabel, edgecolor))
     with open("drawdata.p", "rb") as f:
         pos, G, H = pickle.load(f)
    #draw nodes
