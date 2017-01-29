@@ -132,6 +132,9 @@ def draw_peoplegraph(nodecolor='contacts', nodelabel='none', edgecolor='black'):
 #        edgecol={(u,v,d):scalarMap.to_rgba(d['weight']) for (u,v,d) in drawedges} 
 #        nx.draw_networkx_edges(G, pos, edgelist=drawedges, edge_color=scalarMap.to_rgba(drawweights))
         nx.draw_networkx_edges(G, pos, edgelist=drawedges)
+    if edgecolor=='boring':
+        drawedges = [(u,v, d) for (u,v,d) in G.edges(data=True) if 'boring' in [u,d]] 
+        nx.draw_networkx_edges(G, pos, edgelist=drawedges)
    #draw labels
     if nodelabel=='name':
         labels={node:Idd[node]['name']+"\n"+Idd[node]['email'] for node in G.nodes() if node != 'boring'}
@@ -178,6 +181,7 @@ print("==== treating {} messages ====".format(len(messageids)))
 #messagegraph(messageids, messrels, peopleids)
 #peoplegraph_to_data(messageids, messrels, peopleids)
 #peoplegraph_from_data()
+draw_peoplegraph(nodecolor='jira', nodelabel='none', edgecolor='boring')
 for e in ['black', 'none']:
     draw_peoplegraph(nodecolor='outvolume', nodelabel='outvolume', edgecolor=e)
     draw_peoplegraph(nodecolor='volume', nodelabel='volume', edgecolor=e)
