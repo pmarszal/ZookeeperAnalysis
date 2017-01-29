@@ -12,6 +12,7 @@ import pprint #pretty printing
 import matplotlib.pyplot as plt
 import numpy as np
 import pickle
+import sys
 
 
 #MAIN
@@ -31,7 +32,7 @@ def example_messages(db):
         print(obj)
         print("\n\n===\n\n")
         count+=1
-        if count >3:
+        if count >10:
             break
 
 def save_messrels(db, maxcount):
@@ -78,19 +79,39 @@ def clusterdata(db, maxcount):
     count=1
     for obj in list(db['message'].find()):
         try:
+            if 'from_id' not in obj:
+                continue
          #update messagedict
-            try:
+            if 'in_reply_to_id' in obj:
                 messd[obj['_id']]={'from':obj['from_id'], 'tolist':obj['to_ids'], 'is_reply_to':obj['in_reply_to_id']}
-            except KeyError:
+            else:
                 messd[obj['_id']]={'from':obj['from_id'], 'tolist':obj['to_ids'], 'is_reply_to':'None'}
          #update peopledict
-           #update nbr_sent
+           #update nbr_sent & replies given
             if obj['from_id'] not in ppld:
                 ppld[obj['from_id']] = {}
             if 'nbr_sent' not in ppld[obj['from_id']]:
                 ppld[obj['from_id']]['nbr_sent']=1
             else:
                 ppld[obj['from_id']]['nbr_sent']+=1
+            if messd[obj['_id']]['is_reply_to'] != 'None':
+                if 'reply_sent' not in ppld[obj['from_id']]:
+                    ppld[obj['from_id']]['reply_sent']=1
+                else:
+                    ppld[obj['from_id']]['reply_sent']+=1
+           #update nbr_rec
+            for guy in obj['to_ids']:
+                if guy  not in ppld:
+                    ppld[guy] = {}
+                if 'nbr_rec' not in ppld[guy]:
+                    ppld[guy]['nbr_rec']=1
+                else:
+                    ppld[guy]['nbr_rec']+=1
+                if messd[obj['_id']]['is_reply_to'] != 'None':
+                    if 'reply_rec' not in ppld[guy]:
+                        ppld[guy]['reply_rec']=1
+                    else:
+                        ppld[guy]['reply_rec']+=1
            #update outcontacts
             if obj['from_id'] not in consd:
                 consd[obj['from_id']]={'outcontactset':set(obj['to_ids'])}
@@ -102,36 +123,37 @@ def clusterdata(db, maxcount):
             for guy in obj['to_ids']:
                 if guy not in consd:
                     consd[guy]={'incontactset':set([obj['from_id']])}
-                elif 'outcontactset' not in consd[guy]:
-                    consd[guy]['outcontactset']=set([obj['from_id']])
+                elif 'incontactset' not in consd[guy]:
+                    consd[guy]['incontactset']=set([obj['from_id']])
                 else:
-                    consd[guy]['outcontactset'].add(obj['from_id'])
-
+                    consd[guy]['incontactset'].add(obj['from_id'])
         except KeyError:
-            pass
+            raise
         count +=1
-        if count>maxcount:
-            break
-    print(ppld)
-    print(consd)
-    #data for people: nbr messages sent, nbr people contacted, nbr messages rec, nbr people contacted by, nbr replies given, nbr deepreplies given, nbr replies gotten, nbr deepreplies gotten
-#    peopledict={guy:{'nbr_sent':0,'nbr_rec':0,'nbr_outcontacts':0,'nbr_incontacts':0,'nbr_hasreplied:0','nbr_wasreplied':0 } for guy in peopleids}
-#    contactsetdict={guy:{'incontactset'=set(), 'outcontactset'=set()} for guy in peopleids}
-#    for mess in messagedict:
-#        obj=messagedict[mess]
-#        peopledict[obj['from']]['nbr_sent']+=1
-#        contactset[obj['from']]['outcontactset'].update(obj['tolist'])
-#        for toId in obj['tolist']:
-#            peopledict[toId]['nbr_rec']+=1
-        
+        if maxcount != 'all':
+            if count>maxcount:
+                break
+    for guy in consd:
+        if 'incontactset' in consd[guy]:
+            ppld[guy]['nbr_incontacts']=len(consd[guy]['incontactset'])
+        else:
+            ppld[guy]['nbr_incontacts']=0
+        if 'outcontactset' in consd[guy]:
+            ppld[guy]['nbr_outcontacts']=len(consd[guy]['outcontactset'])
+        else:
+            ppld[guy]['nbr_outcontacts']=0 
     
-#    with open("clusterdata_{}.p".format(maxcount), 'wb') as outfile:
-#        pickle.dump([messagedict, peopledict], outfile)
+    with open("clusterdata_{}.p".format(maxcount), 'wb') as outfile:
+        pickle.dump(ppld, outfile)
 
 print("starting")
 client = MongoClient('localhost',27017) 
 try:
     db = client['smartshark_test']
-    clusterdata(db, 3)
+    maxcount='all'
+    example_messages(db)
+    sys.exit()
+    clusterdata(db, maxcount)
 finally:
     client.close()
+
