@@ -46,5 +46,5 @@ pickle.dump(boringppl, open("boringppl.p", 'wb'))
 #        print("{} // {} is {}".format(X_r[i,0],X_r[i,1], Idd[index[i]]['name']+" "+Idd[index[i]]['email']))
 
 plt.scatter(X_r[:,0], X_r[:,1],c=cat)
-plt.show()
+plt.savefig("cluster.png")
 
