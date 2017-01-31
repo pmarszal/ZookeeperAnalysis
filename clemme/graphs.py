@@ -24,12 +24,12 @@ try:
     db = client['smartshark_test']
     commits = db['commit']
     df = pd.DataFrame(list(commits.find()))
-    df['author_date_wt'] = df['author_date'].apply(dt_to_wt)
+    df['author_date_dyt'] = df['author_date'].apply(dt_to_dyt)
     df['committer_date_wt'] = df['committer_date'].apply(dt_to_wt)
     df['committer_date_dyt'] = df['committer_date'].apply(dt_to_dyt)
     print("done loading data")
 
-    df.plot(kind='scatter', x='author_date_wt', y='committer_date_wt')  
+    df.plot(kind='scatter', x='author_date_dyt', y='committer_date_dyt')  
     plt.savefig("authordate_vs_commitdate.png")
     plt.clf()
 
@@ -50,10 +50,11 @@ try:
     fig = plt.figure(figsize=(8,8))
     ax = fig.add_axes([0.1, 0.1, 0.8, 0.8], polar=True)
     N = 100
-    theta = np.arange(0.0, 2*np.pi, 2*np.pi/N)
+    theta = np.arange(2*np.pi, 0, -2*np.pi/N)
     values = [len([t for t in daytimelist if (n/N<= t <(n+1)/N)]) for n in range(0,N)]
     width = 2*np.pi/N
     bars = ax.bar(theta, values, width=width, bottom=0.0)
+    ax.set_xticks([0])
     fig.savefig("dayperiod_polar.png")
 finally:
     client.close()
